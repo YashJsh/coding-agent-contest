@@ -1,12 +1,6 @@
 import { client } from "./agent";
 import { exec } from "child_process";
-import path from "path";
-import { fileURLToPath } from "node:url";
 import { clients } from ".";
-
-const currentFile = fileURLToPath(import.meta.url);
-const currentDirectory = path.dirname(currentFile);
-const projectRoot = path.resolve(currentDirectory, "../../project");
 
 interface PendingResponse {
     resolve: (response: string) => void;
@@ -24,7 +18,7 @@ const waitForResponse = (correlationId: string) => {
     })
 }
 
-const resolveEngineResponse = (correlationId: string, response: string) => {
+export const resolveEngineResponse = (correlationId: string, response: string) => {
     const pending = pendingResponses.get(correlationId);
     if (!pending) return;
 
@@ -49,22 +43,27 @@ export const writeTodo = async (prompt: string) => {
         model: "gpt-4.1-mini",
         messages: localMessages,
     });
-    return response.choices[0]?.message.content;
-}
-
-export const getPath = () => {
-    const getPath = exec("pwd");
-    return getPath;
+    return response.choices[0]?.message.content || "";
 }
 
 export const bashCommand = (command: string) => {
-    const cmd = exec(command);
-    return cmd;
-}
+    return new Promise<string>((resolve) => {
+        exec(command, (error, stdout, stderr) => {
+            resolve(JSON.stringify({
+                command,
+                success: !error,
+                exitCode: error?.code ?? 0,
+                stdout,
+                stderr,
+                error: error?.message ?? null,
+            }));
+        });
+    });
+};
 
 export const askQuestions = async (question: string) => {
     const correlationId = crypto.randomUUID();
-    clients.res.write(
+    clients.write(
         `event: connected\n` +
         `data: ${JSON.stringify({
             correlationId,
@@ -72,5 +71,6 @@ export const askQuestions = async (question: string) => {
         })}\n\n`
     );
     const response = await waitForResponse(correlationId);
-    return response;
+    console.log("Recieved response is : ", response);
+    return response as string;
 }

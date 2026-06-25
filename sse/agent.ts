@@ -6,16 +6,19 @@ export const client = new OpenAI();
 
 const messages: any = [];
 
-export const callLLM = async (prompt: string, socket: WebSocket) => {
-    messages.push(
-        {
+export const callLLM = async (prompt: string) => {
+    console.log("Reached LLM");
+    messages.push({
             role: "system",
             content: SYSTEM_PROMPT
-        },
-        {
-            role: "user",
-            content: prompt
         });
+
+    messages.push({
+        role: "user",
+        content: prompt
+    })
+
+    console.log(messages);
 
     while (true) {
         const response = await client.chat.completions.create({
@@ -52,7 +55,7 @@ export const callLLM = async (prompt: string, socket: WebSocket) => {
                                     description: "The question we want to ask the user",
                                 },
                             },
-                            required: ["question", "options"],
+                            required: ["question"],
                         },
                     },
                 },
@@ -79,11 +82,6 @@ export const callLLM = async (prompt: string, socket: WebSocket) => {
         if (!choice) break;
 
         const message = choice.message;
-        socket.send(JSON.stringify({
-            type: "message",
-            data: message
-        }));
-
         if (message) {
             messages.push(message);
         }
@@ -92,6 +90,7 @@ export const callLLM = async (prompt: string, socket: WebSocket) => {
                 if (toolCall.function.name === "bash_tool") {
                     const args = JSON.parse(toolCall.function.arguments);
                     const result = await bashCommand(args.command);
+                    console.log("Result is : ",result);
                     messages.push({
                         role: "tool",
                         tool_call_id: toolCall.id,
@@ -100,7 +99,8 @@ export const callLLM = async (prompt: string, socket: WebSocket) => {
                 }
                 if (toolCall.function.name === "ask_questions") {
                     const args = JSON.parse(toolCall.function.arguments);
-                    const result = await askQuestions(args.questions);
+                    const result = await askQuestions(args.question);
+                    console.log("Result is : ",result);
                     messages.push({
                         role: "tool",
                         tool_call_id: toolCall.id,
@@ -110,6 +110,7 @@ export const callLLM = async (prompt: string, socket: WebSocket) => {
                 if (toolCall.function.name === "create_todo") {
                     const args = JSON.parse(toolCall.function.arguments);
                     const result = await writeTodo(args.prompt);
+                    console.log("Result is : ",result);
                     messages.push({
                         role: "tool",
                         tool_call_id: toolCall.id,

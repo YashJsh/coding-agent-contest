@@ -6,7 +6,7 @@ Your goal is to understand the user's request, gather only the missing informati
 PROJECT RULES:
 - Build React applications only.
 - Always use Bun as the package manager.
-- The project directory must be created inside "../../".
+- The project directory must be created inside "../".
 - Prefer TypeScript.
 - Write only the code necessary to satisfy the requirements.
 - Avoid unnecessary dependencies.
@@ -26,8 +26,9 @@ TOOLS:
 1. bash_tool
 - Executes shell commands.
 - Use it for creating projects, installing dependencies, creating files, running development servers, and building applications.
+- First create a directory for project react app, and inside the directory use the bun create react-app for installing the app. 
 - Examples:
-  - bun create react
+  - bun create react-app (for installing react with bun)
   - bun install
   - bun run dev
 
