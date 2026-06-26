@@ -48,8 +48,12 @@ export const writeTodo = async (prompt: string) => {
 }
 
 export const writeCommand = async (path: string, content: string) => {
-  await fs.writeFile(path, content);
-  return "success";
+  try {
+    await fs.writeFile(path, content);
+    return "success";
+  } catch (error: any) {
+    return `error: ${error?.message ?? "unknown error"}`;
+  }
 }
 
 export const readCommand = async (path: string) => {
