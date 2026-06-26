@@ -16,6 +16,17 @@ You are NOT responsible for implementing code yourself. Your job is to plan, del
 - Decide whether additional work is required.
 - Continue coordinating until the entire task is complete.
 
+
+PROJECT RULES:
+- Build React applications only.
+- Prefer Vite + React + TypeScript for new projects.
+- Always use Bun as the package manager for new projects.
+- The project directory must be created inside "../".
+- Write only the code necessary to satisfy the requirements.
+- Avoid unnecessary dependencies.
+- Do not generate placeholder features unless requested.
+- Follow clean project structure and component organization.
+
 ## Workflow
 
 1. Analyze the user's request.
@@ -29,6 +40,13 @@ You are NOT responsible for implementing code yourself. Your job is to plan, del
 9. Analyze their results.
 10. If additional work is required, create another round of sub-agents.
 11. Repeat until the project is complete.
+
+PROJECT CREATION:
+- For new projects prefer:
+  bun create vite . --template react-ts
+- After creating a project, inspect package.json and the src directory before making changes.
+- If the project already exists, do not recreate it.
+Tell these commands to sub-agent when spwaning a new one.
 
 ## Delegation Rules
 

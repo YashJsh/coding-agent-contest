@@ -52,14 +52,16 @@ export const writeTodo = async (prompt: string) => {
   return response.choices[0]?.message.content || "";
 };
 
-export const subAgentSpawning = async (task : string, description : string) => {
+export const subAgentSpawning = async (task: string, description: string) => {
+  console.log("[subAgent]:Starting")
+  console.log("[subAgent Task]:", task);
   const messages: any = [
     {
       role: "system",
       content: SubAgentPrompt,
     },
     {
-      role: "assistant",
+      role: "user",
       content: `Task: ${task}\nDescription: ${description}`,
     },
   ];
@@ -130,6 +132,11 @@ export const subAgentSpawning = async (task : string, description : string) => {
     if (!choices) {
       return "No choices";
     }
+    if (choices.message) {
+      messages.push(choices.message);
+    }
+    console.log("[subAgent response]:", choices.message.content, choices.message.tool_calls);
+    
     if (choices.finish_reason == "stop") {
       return choices.message.content || "Finish reason was stop";
     }
@@ -140,8 +147,8 @@ export const subAgentSpawning = async (task : string, description : string) => {
       }
       for (const tool of toolCalls) {
         if (tool.function.name == "read_file") {
-          const path = tool.function.arguments.path;
-          const response = await readCommand(path);
+          const args = JSON.parse(tool.function.arguments);
+          const response = await readCommand(args.path);
           messages.push({
             role: "tool",
             tool_call_id: tool.id,
@@ -149,22 +156,21 @@ export const subAgentSpawning = async (task : string, description : string) => {
           });
         }
         if (tool.function.name == "write_file") {
-          const path = tool.function.arguments.path;
-          const content = tool.function.arguments.content;
-          const response = await writeCommand(path, content);
+          const args = JSON.parse(tool.function.arguments);
+          const response = await writeCommand(args.path, args.content);
           messages.push({
             role: "tool",
             tool_call_id: tool.id,
             content: response,
           });
         }
-        if (toolCall.function.name === "bash_tool") {
-          const args = JSON.parse(toolCall.function.arguments);
+        if (tool.function.name === "bash_tool") {
+          const args = JSON.parse(tool.function.arguments);
           const result = await bashCommand(args.command);
           console.log("Result is : ", result);
           messages.push({
             role: "tool",
-            tool_call_id: toolCall.id,
+            tool_call_id: tool.id,
             content: result,
           });
         }

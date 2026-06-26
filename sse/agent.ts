@@ -9,7 +9,6 @@ import { clients } from ".";
 
 export const client = new OpenAI();
 
-
 export const callLLM = async (prompt: string) => {
   console.log("Reached LLM");
   const messages: any = [];
@@ -98,7 +97,7 @@ export const callLLM = async (prompt: string) => {
       messages.push(message);
     }
     console.log(
-        "Assistant:",
+        "[Assistant]:",
         message.content,
         message.tool_calls
     );
@@ -112,11 +111,11 @@ export const callLLM = async (prompt: string) => {
           if (toolCall.function.name === "sub_agent") {
             const args = JSON.parse(toolCall.function.arguments);
             const result = await subAgentSpawning(args.task, args.description);
-            messages.push({
+            return {
               role: "tool",
               tool_call_id: toolCall.id,
               content: result,
-            });
+            };
           }
           if (toolCall.function.name === "ask_questions") {
             const args = JSON.parse(toolCall.function.arguments);
