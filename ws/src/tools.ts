@@ -1,12 +1,7 @@
 import { client } from "./agent";
 import { exec } from "child_process";
 import { WebSocket, } from "ws";
-import path from "path";
-import { fileURLToPath} from "node:url";
-
-const currentFile = fileURLToPath(import.meta.url);
-const currentDirectory = path.dirname(currentFile);
-const projectRoot = path.resolve(currentDirectory, "../../project");
+import fs from "fs/promises";
 
 const localMessages: any = [{
     role: "system",
@@ -28,17 +23,34 @@ export const writeTodo = async (prompt: string) => {
     return response.choices[0]?.message.content;
 }
 
-export const getPath  = () => {
-    const getPath =  exec("pwd");
-    return getPath;
+export const writeCommand = async (path: string, content: string) => {
+  try {
+    await fs.writeFile(path, content);
+    return "success";
+  } catch (error: any) {
+    return `error: ${error?.message ?? "unknown error"}`;
+  }
 }
 
-export const bashCommand = (command : string)=>{
-    const cmd = exec(command);
-    return cmd;
+export const readCommand = async (path: string) => {
+  const result = await fs.readFile(path, "utf-8");
+  return result;
 }
 
-export const askQuestions = async (question: string, socket : WebSocket) => {
+export const bashCommand = (command: string) => {
+    return new Promise<string>((resolve) => {
+        exec(command, (error, stdout, stderr) => {
+            resolve(JSON.stringify({
+                command,
+                success: !error,
+                exitCode: error?.code ?? 0,
+                stdout,
+                stderr,
+                error: error?.message ?? null,
+            }));
+        });
+    });
+};export const askQuestions = async (question: string, socket : WebSocket) => {
     socket.send(JSON.stringify({
         type : "question",
         value : question

@@ -1,13 +1,13 @@
 import OpenAI from "openai";
-import { askQuestions, writeTodo, bashCommand } from "./tools";
+import { askQuestions, writeTodo, bashCommand, writeCommand, readCommand } from "./tools";
 import { WebSocket } from "ws";
 import { SYSTEM_PROMPT } from "./prompt";
-import type path from "node:path/win32";
 
 export const client = new OpenAI();
 const messages: any = [];
 
 export const callLLM = async (prompt: string, socket: WebSocket) => {
+  console.log("LLM Called with prompt : ", prompt);
   messages.push(
     {
       role: "system",
@@ -122,6 +122,7 @@ export const callLLM = async (prompt: string, socket: WebSocket) => {
     if (!choice) break;
 
     const message = choice.message;
+    console.log("Assistant : ", message.content, message.tool_calls);
     socket.send(
       JSON.stringify({
         type: "message",
@@ -131,7 +132,18 @@ export const callLLM = async (prompt: string, socket: WebSocket) => {
 
     if (message) {
       messages.push(message);
+      socket.send(JSON.stringify({
+        data : message,
+      }))
     }
+    if (choice.finish_reason === "stop") {
+      socket.send(JSON.stringify({
+        data: message.content
+      }));
+      socket.close();
+      return;
+    }
+    
     if (choice.finish_reason === "tool_calls") {
       for (const toolCall of message.tool_calls ?? []) {
         if (toolCall.function.name === "bash_tool") {
@@ -163,7 +175,7 @@ export const callLLM = async (prompt: string, socket: WebSocket) => {
         }
         if (toolCall.function.name === "read_file") {
           const args = JSON.parse(toolCall.function.arguments);
-          const result = await readFile(args.path);
+          const result = await readCommand(args.path);
           messages.push({
             role: "tool",
             tool_call_id: toolCall.id,
@@ -172,7 +184,7 @@ export const callLLM = async (prompt: string, socket: WebSocket) => {
         }
         if (toolCall.function.name === "write_file") {
           const args = JSON.parse(toolCall.function.arguments);
-          const result = await writeFile(args.path, args.content);
+          const result = await writeCommand(args.path, args.content);
           messages.push({
             role: "tool",
             tool_call_id: toolCall.id,
