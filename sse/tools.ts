@@ -1,6 +1,7 @@
 import { client } from "./agent";
 import { exec } from "child_process";
 import { clients } from ".";
+import fs from "fs/promises";
 
 interface PendingResponse {
     resolve: (response: string) => void;
@@ -44,6 +45,16 @@ export const writeTodo = async (prompt: string) => {
         messages: localMessages,
     });
     return response.choices[0]?.message.content || "";
+}
+
+export const writeCommand = async (path: string, content: string) => {
+  await fs.writeFile(path, content);
+  return "success";
+}
+
+export const readCommand = async (path: string) => {
+  const result = await fs.readFile(path, "utf-8");
+  return result;
 }
 
 export const bashCommand = (command: string) => {
